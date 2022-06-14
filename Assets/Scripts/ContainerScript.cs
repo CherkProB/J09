@@ -8,16 +8,21 @@ public class ContainerScript : MonoBehaviour
     private ContainerSpotScript spotScript;
 
     private Vector3 startPosition;
+    private Vector3 positionInStack;
 
     //Setters
     public void SetSpotScript(ContainerSpotScript css) { spotScript = css; }
     public void SetRowScript(ContainerRowScript crs) { rowScript = crs; }
     public void SetStartPosition() { startPosition = transform.position; }
+    public void SetPositionInStack(Vector3 pos) { positionInStack = pos; }
+
+    //Gettrs
+    public Vector3 GetPositionInStack() { return positionInStack; }
 
     /// <summary>
     /// Вызов метода создания нового контейнера
     /// </summary>
-    public void CreateContainer() { rowScript.CreateContainer(spotScript); }
+    public void CreateContainer() { rowScript.CreateContainer(spotScript, positionInStack); }
 
     /// <summary>
     /// Вызов метода удаления контейнера
@@ -72,5 +77,4 @@ public class ContainerScript : MonoBehaviour
     /// </summary>
     /// <returns>Возвражает true когда контейнер находится в начальной позиции</returns>
     public bool OnPlace() { return transform.position == startPosition; }
-
 }

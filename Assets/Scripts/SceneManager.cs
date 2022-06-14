@@ -99,6 +99,20 @@ public class SceneManager : MonoBehaviour
                     break;
             }
         }
+
+        //Панелька
+        if (Physics.Raycast(ray, out hit) && hit.transform.gameObject.tag == "container") 
+        {
+            ContainerScript cs = hit.transform.gameObject.GetComponent<ContainerScript>();
+
+            string newText = "L: " + cs.GetPositionInStack().x + '\n';
+            newText += "W: " + cs.GetPositionInStack().z + '\n';
+            newText += "H: " + cs.GetPositionInStack().y;
+            GetComponent<HubManager>().GetInfoPanel().SetInfo("Контейнер", newText);
+            GetComponent<HubManager>().GetInfoPanel().Enable(true, Input.mousePosition);
+        }
+        else
+            GetComponent<HubManager>().GetInfoPanel().Enable(false, Vector3.zero);
     }
 
     /// <summary>
@@ -131,6 +145,7 @@ public class SceneManager : MonoBehaviour
                 //Добавление всех необходимых компонентов на точку
                 newContainerSpot.AddComponent<ContainerSpotScript>();
                 newContainerSpot.GetComponent<ContainerSpotScript>().SetRowScript(newRow.GetComponent<ContainerRowScript>());
+                newContainerSpot.GetComponent<ContainerSpotScript>().SetPositionInStack(new Vector3(i, 0, j));
 
                 newRow.GetComponent<ContainerRowScript>().AddContainerSpot(newContainerSpot);
             }

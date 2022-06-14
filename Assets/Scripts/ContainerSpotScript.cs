@@ -7,8 +7,11 @@ public class ContainerSpotScript : MonoBehaviour
     private ContainerRowScript rowScript;
     private List<GameObject> containers = new List<GameObject>();
 
+    private Vector3 positionInStack;
+
     //Setters
     public void SetRowScript(ContainerRowScript crs) { rowScript = crs; }
+    public void SetPositionInStack(Vector3 pos) { positionInStack = pos; }
 
     /// <summary>
     /// Получение списка контейнеров
@@ -19,7 +22,7 @@ public class ContainerSpotScript : MonoBehaviour
     /// <summary>
     /// Вызов метода создания нового контейнера
     /// </summary>
-    public void CreateContainer() { rowScript.CreateContainer(this); }
+    public void CreateContainer() { rowScript.CreateContainer(this, positionInStack); }
 
     /// <summary>
     /// Вызов метода удаления контейнера

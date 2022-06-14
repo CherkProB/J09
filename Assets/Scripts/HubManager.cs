@@ -16,9 +16,11 @@ public class HubManager : MonoBehaviour
 
     //InSceneScreen
     [SerializeField] private GameObject inSceneScreen;
+    [SerializeField] private InfoPanelScript infoPanel;
 
     private bool onScene;
     public bool GetOnScene() { return onScene; }
+    public InfoPanelScript GetInfoPanel() { return infoPanel; }
 
     private void Start()
     {

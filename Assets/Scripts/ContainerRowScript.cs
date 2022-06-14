@@ -41,7 +41,8 @@ public class ContainerRowScript : MonoBehaviour
     /// Создание нового контйенера в точке вызова
     /// </summary>
     /// <param name="css">Точка, в которой необходимо создать контейнер</param>
-    public void CreateContainer(ContainerSpotScript css)
+    /// <param name="pos">Позиция в куче контйенеров</param>
+    public void CreateContainer(ContainerSpotScript css, Vector3 pos)
     {
         if (css.GetContainers().Count >= maxHeight) return;
 
@@ -53,6 +54,7 @@ public class ContainerRowScript : MonoBehaviour
         newContainer.AddComponent<ContainerScript>();
         newContainer.GetComponent<ContainerScript>().SetSpotScript(css);
         newContainer.GetComponent<ContainerScript>().SetRowScript(this);
+        newContainer.GetComponent<ContainerScript>().SetPositionInStack(new Vector3(pos.x, css.GetContainers().Count, pos.z));
         newContainer.transform.position += Vector3.up * css.GetContainers().Count * containerHeight;
         newContainer.GetComponent<ContainerScript>().SetStartPosition();
 
