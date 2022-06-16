@@ -35,6 +35,8 @@ public class SceneManager : MonoBehaviour
     private float lengthGap;
     private float widthGap;
 
+    private bool infoFlag = false;
+
     private void Update()
     {
         //Находится ли пользователь на сцена
@@ -101,7 +103,7 @@ public class SceneManager : MonoBehaviour
         }
 
         //Панелька
-        if (Physics.Raycast(ray, out hit) && hit.transform.gameObject.tag == "container") 
+        if (infoFlag && Physics.Raycast(ray, out hit) && hit.transform.gameObject.tag == "container") 
         {
             ContainerScript cs = hit.transform.gameObject.GetComponent<ContainerScript>();
 
@@ -113,6 +115,9 @@ public class SceneManager : MonoBehaviour
         }
         else
             GetComponent<HubManager>().GetInfoPanel().Enable(false, Vector3.zero);
+
+        if (Input.GetKeyDown(KeyCode.Q))
+            infoFlag = infoFlag ? false : true;
     }
 
     /// <summary>

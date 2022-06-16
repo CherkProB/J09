@@ -20,6 +20,10 @@ public class ContainerRowScript : MonoBehaviour
     public void SetAnimTime(float time) { animTime = time; }
     public void AddContainerSpot(GameObject containerSpot) { containerSpots.Add(containerSpot); }
 
+    //Getters
+    public int GetMaxHeight() { return maxHeight; }
+    public int GetContainerHeight() { return containerHeight; }
+
     /// <summary>
     /// Проверяет находится ли ряд контейнеров на земле
     /// </summary>
@@ -36,6 +40,21 @@ public class ContainerRowScript : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Проверяет поднят ли весь ряд контейнеров на нужную точку
+    /// </summary>
+    /// <returns>Возвращает true, если весь ряд поднят</returns>
+    public bool ContainersRaised() 
+    {
+        for (int i = 0; i < containerSpots.Count; i++)
+        {
+            List<GameObject> activeContainers = containerSpots[i].GetComponent<ContainerSpotScript>().GetContainers();
+            for (int j = 0; j < activeContainers.Count; j++)
+                if (!activeContainers[j].GetComponent<ContainerScript>().isRaised())
+                    return false;
+        }
+        return true;
+    }
 
     /// <summary>
     /// Создание нового контйенера в точке вызова
@@ -47,6 +66,7 @@ public class ContainerRowScript : MonoBehaviour
         if (css.GetContainers().Count >= maxHeight) return;
 
         if (!ContainersOnLand()) DropContainersRow();
+        //
 
         GameObject newContainer = Instantiate(containerPrefab, css.transform.position, Quaternion.identity, css.transform);
         newContainer.transform.localScale = Vector3.one;
@@ -82,7 +102,7 @@ public class ContainerRowScript : MonoBehaviour
     public void RaiseContainersRow(List<GameObject> containersRows)
     {
         //Если контейнеры подняты их не нужно поднимать
-        if (!ContainersOnLand()) return;
+        if (ContainersRaised()) return;
 
         //Проверка подняты ли контейнеры в других рядах
         //И если подняты то опустить их
@@ -101,12 +121,7 @@ public class ContainerRowScript : MonoBehaviour
         {
             List<GameObject> activeContainers = containerSpots[i].GetComponent<ContainerSpotScript>().GetContainers();
             for (int j = 0; j < activeContainers.Count; j++) 
-            {
-                Vector3 targetPos = activeContainers[j].transform.position;
-                targetPos.y = containerHeight * (maxHeight + 1) + containerHeight * 2 * j;
-
-                StartCoroutine(activeContainers[j].GetComponent<ContainerScript>().Raise(animEasing, animTime, targetPos));
-            }
+                StartCoroutine(activeContainers[j].GetComponent<ContainerScript>().Raise(animEasing, animTime));
         }
     }
 

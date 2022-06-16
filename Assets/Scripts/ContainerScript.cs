@@ -46,11 +46,16 @@ public class ContainerScript : MonoBehaviour
     /// <param name="easing"> рива€ анимации</param>
     /// <param name="targetPosition">“очка, на которую необходимо подн€ть контейнер</param>
     /// <returns></returns>
-    public IEnumerator Raise(AnimationCurve easing, float animationTime, Vector3 targetPosition) 
+    public IEnumerator Raise(AnimationCurve easing, float animationTime)
     {
+        Vector3 targetPosition = transform.position;
+        targetPosition.y = rowScript.GetContainerHeight() * (rowScript.GetMaxHeight() + 1) + rowScript.GetContainerHeight() * 2 * positionInStack.y;
+
+        Vector3 activePosition = transform.position;
+
         for (float i = 0; i < 1; i += Time.deltaTime / animationTime) 
         {
-            transform.position = Vector3.Lerp(startPosition, targetPosition, easing.Evaluate(i));
+            transform.position = Vector3.Lerp(activePosition, targetPosition, easing.Evaluate(i));
             yield return null;
         }
         transform.position = targetPosition; 
@@ -75,6 +80,18 @@ public class ContainerScript : MonoBehaviour
     /// <summary>
     /// ѕровер€ет находитс€ ли контейнер на начальной позиции
     /// </summary>
-    /// <returns>¬озвражает true когда контейнер находитс€ в начальной позиции</returns>
+    /// <returns>¬озвражает true, когда контейнер находитс€ в начальной позиции</returns>
     public bool OnPlace() { return transform.position == startPosition; }
+
+    /// <summary>
+    /// ѕровер€ет полностью ли подн€т контейнер
+    /// </summary>
+    /// <returns>¬озвращает true, когда контейнер подн€т полностью</returns>
+    public bool isRaised() 
+    {
+        Vector3 raisedPos = transform.position;
+        raisedPos.y = rowScript.GetContainerHeight() * (rowScript.GetMaxHeight() + 1) + rowScript.GetContainerHeight() * 2 * positionInStack.y;
+
+        return transform.position == raisedPos;
+    }
 }
