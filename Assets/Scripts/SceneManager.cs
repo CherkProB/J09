@@ -1,191 +1,221 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class SceneManager : MonoBehaviour
 {
-    //Р Р°Р·РјРµСЂС‹ РєРѕРЅС‚РµР№РЅРµСЂР°
-    private const int containerLength = 2;
-    private const int containerWidth = 1;
-    private const int containerHeight = 1;
+    private List<ContainerRow> containerRows;
+    private bool inspectorMode;
 
-    //РўРѕС‡РєР° СЃРѕР·РґР°РЅРёСЏ СѓСЂРѕРІРЅСЏ
-    [SerializeField] private GameObject spawnPoint;
+    //Дочерние объекты
+    private UI ui;
+    private InputManager inputManager;
+    private CameraController cameraController;
+    //Информация о поле
+    private FieldData fieldData;
+    private Transform spawnPoint;
+    //О контейнерах
+    private Vector3Int containerSize;
+    private Container containerPrefab;
+    private ContainerSpot containerSpotPrefab;
+    private ContainerRow containerRowPrefab;
+    private ContainerFactory containerFactory;
+    //Изменение текста о состоянии просмотра
+    private UnityEvent<bool> changeModeText;
 
-    //РџСЂРµС„Р°Р±С‹ РѕР±СЉРµРєС‚РѕРІ
-    [SerializeField] private GameObject container;
-    [SerializeField] private GameObject containerSpot;
-    [SerializeField] private GameObject ground;
+    //Свойства
+    public UI UI { set { ui = value; } }
+    public InputManager InputManager { set { inputManager = value; } }
+    public ContainerFactory ContainerFactory { set { containerFactory = value; } }
+    public Vector3Int ContainerSize { set { containerSize = value; } }
+    public Transform SpawnPoint { set { spawnPoint = value; } }
+    public CameraController Camera { set { cameraController = value; } }
+    public Container ContainerPrefab { set { containerPrefab = value; } }
+    public ContainerSpot ContainerSpotPrefab { set { containerSpotPrefab = value; } }
+    public ContainerRow ContainerRowPrefab { set { containerRowPrefab = value; } }
+    public UnityEvent<bool> ChangeModeText { set { changeModeText = value; } }
 
-    //РљСЂРёРІР°СЏ Р°РЅРёРјР°С†РёРё
-    [SerializeField] private AnimationCurve animEasing;
-
-    //Р’СЂРµРјСЏ Р°РЅРёРјР°С†РёРё
-    [SerializeField] private float animTime;
-
-    //РЎРїРёСЃРѕРє СЂСЏРґРѕРІ РєРѕРЅС‚РµР№РЅРµСЂРѕРІ
-    private List<GameObject> containersRows = new List<GameObject>();
-
-    //Р Р°Р·РјРµСЂС‹ РїРѕР»СЏ
-    private int length;
-    private int width;
-    private int height;
-
-    //Р—Р°Р·РѕСЂС‹ РїРѕР»СЏ
-    private float lengthGap;
-    private float widthGap;
-
-    private bool infoFlag = false;
-
-    private void Update()
+    /// <summary>
+    /// Инициализация основных полей
+    /// </summary>
+    private void Awake()
     {
-        //РќР°С…РѕРґРёС‚СЃСЏ Р»Рё РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅР° СЃС†РµРЅР°
-        if (!GetComponent<HubManager>().GetOnScene()) return;
+        containerRows = new List<ContainerRow>();
+    }
 
-        RaycastHit hit;
-        Ray ray = GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
+    /// <summary>
+    /// Инициализация дочерних объектов
+    /// </summary>
+    private void Start()
+    {
+        ui.CreateLevelEvent.AddListener(CreateLevel);
 
-        //РЎРѕР·РґР°РЅРёРµ РєРѕРЅС‚РµР№РЅРµСЂР°
-        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out hit))
+        inputManager.LeftMouseButton.AddListener(LeftMouseButtonClick);
+        inputManager.RightMouseButton.AddListener(RightMouseButtonClick);
+        inputManager.QButton.AddListener(ToggleInspectorMode);
+
+        inspectorMode = false;
+    }
+
+
+    /// <summary>
+    /// Метод создания поля для контейнеров
+    /// </summary>
+    /// <param name="data">Информация о поле для контейнеров</param>
+    private void CreateLevel(FieldData data)
+    {
+        //Присвоение инормации о размерах поля глобальной переменной
+        fieldData = data;
+        //Присвоение инормации о размерах поля для фабрики контейнеров
+        containerFactory.FieldSize = fieldData;
+
+        //По рядам
+        for (int i = 0; i < fieldData.Length; i++)
         {
-            switch (hit.transform.gameObject.tag)
+            //Создание ряда контейнеров
+            Vector3 newContainerRowPos = new Vector3((fieldData.LengthGap + containerSize.x) * i, 0, 0);
+            ContainerRow newContainerRow = Instantiate(containerRowPrefab, newContainerRowPos, Quaternion.identity, spawnPoint);
+
+            //По секциям
+            for (int j = 0; j < fieldData.Width; j++)
             {
-                case "container":
-                    hit.transform.gameObject.GetComponent<ContainerScript>().CreateContainer();
-                    break;
-                case "spot":
-                    hit.transform.gameObject.GetComponent<ContainerSpotScript>().CreateContainer();
-                    break;
+                //Создание точки появления контейнера
+                Vector3 containerSpotPos = new Vector3((fieldData.LengthGap + containerSize.x) * i, 0.2f, (fieldData.WidthGap + containerSize.z) * j);
+                ContainerSpot newContainerSpot = Instantiate(containerSpotPrefab, containerSpotPos, Quaternion.identity, newContainerRow.transform);
+
+                //Присвоение необходимой информации созданой точке
+                newContainerSpot.Position = new Vector3Int(i, -1, j);
+                newContainerRow.ContainerSpots.Add(newContainerSpot);
             }
+
+            //Добавление созданного ряда в список
+            containerRows.Add(newContainerRow);
         }
 
-        //РЈРґР°Р»РµРЅРёРµ РєРѕРЅС‚РµР№РЅРµСЂР°
-        if (Input.GetMouseButtonDown(1) && Physics.Raycast(ray, out hit))
-        {
-            switch (hit.transform.gameObject.tag)
-            {
-                case "container":
-                    hit.transform.gameObject.GetComponent<ContainerScript>().RemoveContainer();
-                    break;
-                case "spot":
-                    hit.transform.gameObject.GetComponent<ContainerSpotScript>().RemoveContainer();
-                    break;
-            }
+        //Настройка центра вращения у камеры
+        float sceneCenterX = ((float)(fieldData.Length * (containerSize.x + fieldData.LengthGap) - fieldData.LengthGap) - containerSize.x) / 2;
+        float sceneCenterY = 1f;
+        float sceneCenterZ = ((float)(fieldData.Width * (containerSize.z + fieldData.WidthGap) - fieldData.WidthGap) - containerSize.z) / 2;
 
+        //Присвоение ценра вращения камере
+        Vector3 newCenter = new Vector3(sceneCenterX, sceneCenterY, sceneCenterZ);
+        cameraController.SetSceneCenter(newCenter);
+    }
+
+    /// <summary>
+    /// Метод, вызываемый при нажатии левой кнопки мыши
+    /// </summary>
+    /// <param name="obj">Коллайдер объекта, на который нажали левой кнопкой</param>
+    private void LeftMouseButtonClick(Collider obj)
+    {
+        //Для определения на какой объект нажали
+        ContainerSpot spotSender = obj.GetComponent<ContainerSpot>();
+        Container containerSender = obj.GetComponent<Container>();
+
+        //Проверка на null
+        //Если нажали ни на точку, ни на контейнер
+        if (spotSender == containerSender) return;
+
+        //Опустить все ряды
+        foreach (ContainerRow row in containerRows)
+            row.DropRow();
+
+
+        if (inspectorMode) //Поднять ряд
+        {
+            //Получение позиции, на которую нажали
+            Vector3Int newContainerPos = Vector3Int.zero;
+            if (spotSender)
+                newContainerPos = spotSender.Position;
+            else if (containerSender)
+                newContainerPos = containerSender.Position;
+            else
+                return; //error
+
+            //Поднятие ряда по найденной позиции
+            containerRows[newContainerPos.x].RaiseRow(containerSize, fieldData.Height);
+        }
+        else //Создание контейнера
+        {
+            //Получение позиции, на которую нажали
+            Vector3Int newContainerPos = Vector3Int.zero;
+            if (spotSender)
+                newContainerPos = spotSender.Position;
+            else if (containerSender)
+                newContainerPos = containerSender.Position;
+            else
+                return; //error
+
+            //Вызов фабрики
+            Container newContainer = containerFactory.CreateContainer(containerPrefab, containerRows[newContainerPos.x].ContainerSpots[newContainerPos.z], newContainerPos);
+
+            //Еслм контейнер создан
+            if (!newContainer) return;
+
+            //Добавление созданного контйенра в правильную точку по найденной позиции
+            containerRows[newContainerPos.x].ContainerSpots[newContainerPos.z].Containers.Add(newContainer);
+        }
+    }
+
+    /// <summary>
+    /// Метод, вызываемый при нажатии правой кнопки мыши
+    /// </summary>
+    /// <param name="obj">Коллайдер объекта, на который нажали правой кнопкой</param>
+    private void RightMouseButtonClick(Collider obj)
+    {
+        //Для определения на какой объект нажали
+        ContainerSpot spotSender = obj.GetComponent<ContainerSpot>();
+        Container containerSender = obj.GetComponent<Container>();
+
+        //Проверка на null
+        //Если нажали ни на точку, ни на контейнер
+        if (spotSender == containerSender) return;
+
+        //Завершить все корутины, которые начали ряды
+        //Для избежания бага анимации
+        foreach (ContainerRow row in containerRows) 
+        {
+            row.StopAllCoroutines();
+            row.DropRow();
         }
 
-        //РџРѕРґРЅСЏС‚РёРµ СЂСЏРґР° РєРѕРЅС‚РµР№РЅРµСЂРѕРІ
-        if (Input.GetKeyDown(KeyCode.W) && Physics.Raycast(ray, out hit))
+        if (inspectorMode) //Опустить ряд
         {
-            switch (hit.transform.gameObject.tag)
-            {
-                case "container":
-                    hit.transform.gameObject.GetComponent<ContainerScript>().RaiseContainers(containersRows);
-                    break;
-                case "spot":
-                    hit.transform.gameObject.GetComponent<ContainerSpotScript>().RaiseContainers(containersRows);
-                    break;
-            }
-        }
+            //Получение позиции, на которую нажали
+            Vector3Int newContainerPos = Vector3Int.zero;
+            if (spotSender)
+                newContainerPos = spotSender.Position;
+            else if (containerSender)
+                newContainerPos = containerSender.Position;
+            else
+                return; //error
 
-        //РћРїСѓСЃРєР°РЅРёРµ СЂСЏРґР° РєРѕРЅС‚РµР№РЅРµСЂРѕРІ
-        if (Input.GetKeyDown(KeyCode.S) && Physics.Raycast(ray, out hit))
-        {
-            switch (hit.transform.gameObject.tag)
-            {
-                case "container":
-                    hit.transform.gameObject.GetComponent<ContainerScript>().DropContainers();
-                    break;
-                case "spot":
-                    hit.transform.gameObject.GetComponent<ContainerSpotScript>().DropContainers();
-                    break;
-            }
-        }
-
-        //РџР°РЅРµР»СЊРєР°
-        if (infoFlag && Physics.Raycast(ray, out hit) && hit.transform.gameObject.tag == "container") 
-        {
-            ContainerScript cs = hit.transform.gameObject.GetComponent<ContainerScript>();
-
-            string newText = "L: " + cs.GetPositionInStack().x + '\n';
-            newText += "W: " + cs.GetPositionInStack().z + '\n';
-            newText += "H: " + cs.GetPositionInStack().y;
-            GetComponent<HubManager>().GetInfoPanel().SetInfo("РљРѕРЅС‚РµР№РЅРµСЂ", newText);
-            GetComponent<HubManager>().GetInfoPanel().Enable(true, Input.mousePosition);
+            //Опусание ряда по найденной позиции
+            containerRows[newContainerPos.x].DropRow();
         }
         else
-            GetComponent<HubManager>().GetInfoPanel().Enable(false, Vector3.zero);
-
-        if (Input.GetKeyDown(KeyCode.Q))
-            infoFlag = infoFlag ? false : true;
-    }
-
-    /// <summary>
-    /// Р¤СѓРЅРєС†РёСЏ СЃРѕР·РґР°РЅРёСЏ СѓСЂРѕРІРЅСЏ
-    /// </summary>
-    public void CreateLevel()
-    {
-        for (int i = 0; i < length; i++)
         {
-            //РЎРѕР·РґР°РЅРёРµ РїСѓСЃС‚С‹С€РєРё РІ РєРѕС‚РѕСЂРѕР№ Р±СѓРґРµС‚ С…СЂР°РЅРёС‚СЊСЃСЏ СЂСЏРґ РєРѕРЅС‚РµР№РЅРµСЂРѕРІ
-            GameObject emptyGameObject = new GameObject();
-            Vector3 emptyGameObjectPos = new Vector3((lengthGap + containerLength) * i, 0, 0);
-            GameObject newRow = Instantiate(emptyGameObject, emptyGameObjectPos, Quaternion.identity, spawnPoint.transform);
-            Destroy(emptyGameObject);
+            //Получение позиции, на которую нажали
+            Vector3Int newContainerPos = Vector3Int.zero;
+            if (spotSender)
+                newContainerPos = spotSender.Position;
+            else if (containerSender)
+                newContainerPos = containerSender.Position;
+            else
+                return; //error
 
-            //Р”РѕР±Р°РІР»РµРЅРёРµ РІСЃРµС… РЅРµРѕР±С…РѕРґРёРјС‹С… РєРѕРјРїРѕРЅРµРЅС‚РѕРІ РЅР° РїСѓСЃС‚С‹С€РєСѓ
-            newRow.AddComponent<ContainerRowScript>();
-            newRow.GetComponent<ContainerRowScript>().SetContainerPrefab(container);
-            newRow.GetComponent<ContainerRowScript>().SetMaxHeight(height);
-            newRow.GetComponent<ContainerRowScript>().SetContainerHeight(containerHeight);
-            newRow.GetComponent<ContainerRowScript>().SetAnimEasing(animEasing);
-            newRow.GetComponent<ContainerRowScript>().SetAnimTime(animTime);
-
-            for (int j = 0; j < width; j++)
-            {
-                //РЎРѕР·РґР°РЅРёРµ С‚РѕС‡РєРё РїРѕСЏРІР»РµРЅРёСЏ РєРѕРЅС‚РµР№РЅРµСЂР°
-                Vector3 containerSpotPos = new Vector3((lengthGap + containerLength) * i, 0.2f, (widthGap + containerWidth) * j);
-                GameObject newContainerSpot = Instantiate(containerSpot, containerSpotPos, Quaternion.identity, newRow.transform);
-
-                //Р”РѕР±Р°РІР»РµРЅРёРµ РІСЃРµС… РЅРµРѕР±С…РѕРґРёРјС‹С… РєРѕРјРїРѕРЅРµРЅС‚РѕРІ РЅР° С‚РѕС‡РєСѓ
-                newContainerSpot.AddComponent<ContainerSpotScript>();
-                newContainerSpot.GetComponent<ContainerSpotScript>().SetRowScript(newRow.GetComponent<ContainerRowScript>());
-                newContainerSpot.GetComponent<ContainerSpotScript>().SetPositionInStack(new Vector3(i, 0, j));
-
-                newRow.GetComponent<ContainerRowScript>().AddContainerSpot(newContainerSpot);
-            }
-
-            containersRows.Add(newRow);
+            //Удаление контйенера по найденной позиции
+            containerFactory.DeleteContainer(containerRows[newContainerPos.x].ContainerSpots[newContainerPos.z]);
         }
-
-        //РќР°СЃС‚СЂРѕР№РєР° С†РµРЅС‚СЂР° РІСЂР°С‰РµРЅРёСЏ Сѓ РєР°РјРµСЂС‹
-        float sceneCenterX = ((float)(length * (containerLength + lengthGap) - lengthGap) - containerLength) / 2;
-        float sceneCenterY = 1f;
-        float sceneCenterZ = ((float)(width * (containerWidth + widthGap) - widthGap) - containerWidth) / 2;
-
-        Vector3 newCenter = new Vector3(sceneCenterX, sceneCenterY, sceneCenterZ);
-        GetComponent<CameraController>().SetSceneCenter(newCenter);
-
-        //РЎРѕР·РґР°РЅРёРµ Р·РµРјР»Рё РїРѕРґ С‚РѕС‡РєР°РјРё РїРѕСЏРІР»РµРЅРёСЏ РєРѕРЅС‚РµР№РЅРµСЂРѕРІ
-        newCenter.y = 0.1f;
-        GameObject newGround = Instantiate(ground, newCenter, Quaternion.identity, spawnPoint.transform);
-        newGround.transform.localScale = new Vector3(newCenter.x * 2 + containerLength, newCenter.y, newCenter.z * 2 + containerWidth) * 100f;
     }
 
     /// <summary>
-    /// РџРµСЂРµРґР°С‡Р° РїР°СЂР°РјРµС‚СЂРѕРІ Рѕ РїРѕР»Рµ РёР· HudManager РІ SceneManager
+    /// Переключение режима просмотра
     /// </summary>
-    /// <param name="length">Р”Р»РёРЅР° РїРѕР»СЏ</param>
-    /// <param name="width">РЁРёСЂРёРЅР° РїРѕР»СЏ</param>
-    /// <param name="height">Р’С‹СЃРѕС‚Р° РїРѕР»СЏ</param>
-    /// <param name="lengthGap">Р—Р°Р·РѕСЂ РїРѕ РґР»РёРЅРµ</param>
-    /// <param name="widthGap">Р—Р°Р·РѕСЂ РїРѕ С€РёСЂРёРЅРµ</param>
-    public void SetData(int length, int width, int height, float lengthGap, float widthGap)
+    public void ToggleInspectorMode() 
     {
-        this.length = length;
-        this.width = width;
-        this.height = height;
-        this.lengthGap = lengthGap;
-        this.widthGap = widthGap;
+        inspectorMode = !inspectorMode;
+        changeModeText.Invoke(inspectorMode);
     }
 }

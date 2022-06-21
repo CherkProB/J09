@@ -13,23 +13,20 @@ public class CameraController : MonoBehaviour
 	private float X;
 	private float Y;
 
-	private HubManager hub;
-    private Vector3 sceneCenter;
+	private Vector3 sceneCenter;
 
-    private void Start()
-    {
-		hub = GetComponent<HubManager>();
-
+	private void Start()
+	{
 		maxY = Mathf.Abs(maxY);
 		if (maxY > 90) maxY = 90;
-    }
+	}
 
-    private void Update()
-    {
-		if (hub.GetOnScene())
+	private void Update()
+	{
+		if (true)//hub.GetOnScene())
 		{
 			//ќтслеживание движени€ мыши
-			if (Input.GetMouseButton(2)) 
+			if (Input.GetMouseButton(2))
 			{
 				X = transform.localEulerAngles.y + Input.GetAxis("Mouse X") * sensitivity;
 				Y += Input.GetAxis("Mouse Y") * sensitivity;
@@ -51,9 +48,9 @@ public class CameraController : MonoBehaviour
 	/// ”становка центра камеры, вокруг которого она будет вращатьс€
 	/// </summary>
 	/// <param name="newCenter">÷ентр камеры, вокруг которого она будет вращатьс€</param>
-    public void SetSceneCenter(Vector3 newCenter) 
-    {
-        sceneCenter = newCenter;
+	public void SetSceneCenter(Vector3 newCenter)
+	{
+		sceneCenter = newCenter;
 		transform.position = sceneCenter + offset;
 	}
 }
