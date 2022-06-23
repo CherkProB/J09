@@ -45,7 +45,6 @@ public class StartUp : MonoBehaviour
     [SerializeField] private AnimationCurve easing;
     [SerializeField] private float animTime;
 
-
     private void Awake()
     {
         sceneManager.UI = ui;

@@ -79,9 +79,9 @@ public class UI : MonoBehaviour
         if (!container) return;
 
         string desc = "";
-        desc += "Секция: " + container.Position.z + '\n';
-        desc += "Ряд: " + container.Position.x + '\n';
-        desc += "Высота: " + container.Position.y;
+        desc += "Секция: " + (container.Position.z + 1) + '\n';
+        desc += "Ряд: " + (container.Position.x + 1) + '\n';
+        desc += "Высота: " + (container.Position.y + 1);
 
         StartCoroutine(gameScreen.Panel.ShowInfoCor("Контейнер", desc, infoPanelPosition));
     }

@@ -11,12 +11,15 @@ public class Container : MonoBehaviour
     //Информация о анимации
     private AnimationCurve easing;
     private float animationTime;
+    //
+    private Outline outline;
 
     //Свойства
     public Vector3 StartPosition { get { return startPosition; } set { startPosition = value; } }
     public Vector3Int Position { get { return position; } set { position = value; } }
     public AnimationCurve Easing { set { easing = value; } }
     public float AnimationTime { set { animationTime = value; } }
+    public Outline Outline { get { return outline; } set { outline = value; } }
 
     /// <summary>
     /// Корутина поднимания контйенера в воздух
@@ -57,4 +60,7 @@ public class Container : MonoBehaviour
         }
         transform.position = startPosition;
     }
+
+    private void OnMouseEnter() => outline.enabled = true;
+    private void OnMouseExit() => outline.enabled = false;
 }

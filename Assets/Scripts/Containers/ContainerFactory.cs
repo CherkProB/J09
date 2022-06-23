@@ -50,7 +50,15 @@ public class ContainerFactory : MonoBehaviour
             newContainer.Position = senderPos + Vector3Int.up;
         }
 
+        //Создание обводки
+        Outline newContainerOutLine = newContainer.gameObject.AddComponent<Outline>();
+        newContainerOutLine.OutlineColor = Color.cyan;
+        newContainerOutLine.OutlineWidth = 10;
+        newContainerOutLine.OutlineMode = Outline.Mode.OutlineAll;
+
         //Добавление всей необходимой информации
+        newContainer.Outline = newContainerOutLine;
+        newContainer.Outline.enabled = false;
         newContainer.Easing = easing;
         newContainer.AnimationTime = animTime;
         newContainer.transform.position = newContainer.StartPosition;
